@@ -5,6 +5,8 @@ defmodule Labels do
   """
   use GenServer
 
+  require Logger
+
   @default_labels_file "./priv/imports/default_labels.csv"
 
   # Client
@@ -15,15 +17,19 @@ defmodule Labels do
   ## Examples
     {:ok, pid} = Labels.start_link()
     {:ok, #PID<0.173.0>}
+
+    {:ok, pid} = Labels.start_link(default_labels_file: "./cool_labels.csv")
+    {:ok, #PID<0.173.0>}
   """
   @spec start_link(keyword()) :: {:ok, pid}
-  def start_link(args \\ []), do: GenServer.start_link(__MODULE__, args, name: __MODULE__)
+  def start_link(opts \\ []), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
   @doc """
   Returns the list of unique labels by request service.
   """
   def get_all(service), do: GenServer.call(__MODULE__, {:get_all, service})
 
+  @spec add(any, any) :: :ok
   @doc """
   Add a new one
   """
@@ -31,10 +37,15 @@ defmodule Labels do
 
   # Server
 
-  def init(_args) do
+  def init(opts) do
+    Logger.info("Labels server started with ops #{inspect(opts)}")
+
+    default_file_path = opts |> Keyword.get(:default_labels_file, @default_labels_file)
+
     {:ok, table} = :dets.open_file(:labels_dets, type: :set)
 
-    load_defaults_labels(table)
+    table
+    |> load_defaults_labels(default_file_path)
 
     {:ok, table}
   end
@@ -47,6 +58,8 @@ defmodule Labels do
   end
 
   def handle_cast({:add, service, label}, table) do
+    Logger.info("Adding label #{label} to service #{service}")
+
     case :dets.lookup(table, service) do
       [{_, labels}] ->
         labels =
@@ -65,8 +78,9 @@ defmodule Labels do
 
   defp clean(label), do: label |> String.downcase() |> String.trim() |> String.replace(" ", "_")
 
-  defp load_defaults_labels(table) do
-    File.stream!(@default_labels_file)
+  defp load_defaults_labels(table, default_labels_file) do
+    default_labels_file
+    |> File.stream!()
     |> Stream.map(&String.split(&1, ","))
     |> Stream.map(fn [service, label] -> {service, label} end)
     |> Enum.to_list()
