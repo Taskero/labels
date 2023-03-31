@@ -30,28 +30,25 @@ defmodule Labels do
   # Server
 
   def init(_args) do
-    table = :ets.new(:labels, [:ordered_set, :public])
-
-    # TODO: load from disk
-
+    {:ok, table} = :dets.open_file(:labels_dets, type: :set)
     {:ok, table}
   end
 
   def handle_call({:get_all, service}, _from, table) do
-    case :ets.lookup(table, service) do
+    case :dets.lookup(table, service) do
       [{_, labels}] -> {:reply, labels, table}
       [] -> {:reply, [], table}
     end
   end
 
   def handle_cast({:add, service, label}, table) do
-    case :ets.lookup(table, service) do
+    case :dets.lookup(table, service) do
       [{_, labels}] ->
-        :ets.insert(table, {service, [label |> clean() | labels] |> Enum.uniq() |> Enum.sort()})
+        :dets.insert(table, {service, [label |> clean() | labels] |> Enum.uniq() |> Enum.sort()})
         {:noreply, table}
 
       [] ->
-        :ets.insert(table, {service, [label]})
+        :dets.insert(table, {service, [label]})
         {:noreply, table}
     end
   end

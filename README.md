@@ -1,6 +1,23 @@
 # Labels
 
-**TODO: Add description**
+Simple server to store labels by service
+It use `dets` persist
+
+## Usage
+
+```elixir
+Labels.start_link
+{:ok, #PID<0.299.0>}
+
+Labels.get_all(:my_cool_service)
+[]
+Labels.add(:my_cool_service, "bar")
+:ok
+Labels.add(:my_cool_service, "foo")
+:ok
+Labels.get_all(:my_cool_service)
+["bar", "foo"]
+```
 
 ## Installation
 
