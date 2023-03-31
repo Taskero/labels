@@ -19,6 +19,22 @@ Labels.get_all(:my_cool_service)
 ["bar", "foo"]
 ```
 
+## View all content
+
+In order to view all the contents, pass the `dets` to a public `ets`
+
+```elixir
+Labels.start_link
+temporary_ets = :ets.new(:temporary_ets, [:public])
+:dets.to_ets(:labels_dets, temporary_ets)
+:ets.info(temporary_ets) # memory
+:ets.tab2list(temporary_ets)
+[ {"taskero", ["a", "b", .. , "z"]} ]
+# or view with observer
+:observer.start
+
+```
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed

@@ -5,6 +5,8 @@ defmodule Labels do
   """
   use GenServer
 
+  @default_labels_file "./priv/imports/default_labels.csv"
+
   # Client
 
   @doc """
@@ -31,6 +33,9 @@ defmodule Labels do
 
   def init(_args) do
     {:ok, table} = :dets.open_file(:labels_dets, type: :set)
+
+    load_defaults_labels(table)
+
     {:ok, table}
   end
 
@@ -44,7 +49,12 @@ defmodule Labels do
   def handle_cast({:add, service, label}, table) do
     case :dets.lookup(table, service) do
       [{_, labels}] ->
-        :dets.insert(table, {service, [label |> clean() | labels] |> Enum.uniq() |> Enum.sort()})
+        labels =
+          [label |> clean() | labels]
+          |> Enum.uniq()
+          |> Enum.sort()
+
+        :dets.insert(table, {service, labels})
         {:noreply, table}
 
       [] ->
@@ -54,4 +64,26 @@ defmodule Labels do
   end
 
   defp clean(label), do: label |> String.downcase() |> String.trim() |> String.replace(" ", "_")
+
+  defp load_defaults_labels(table) do
+    File.stream!(@default_labels_file)
+    |> Stream.map(&String.split(&1, ","))
+    |> Stream.map(fn [service, label] -> {service, label} end)
+    |> Enum.to_list()
+    |> Enum.group_by(fn {service, _label} -> service end)
+    |> Enum.each(fn {service, labels} ->
+      list =
+        labels
+        |> Enum.map(fn {_, label} -> label |> clean() end)
+
+      current =
+        case :dets.lookup(table, service) do
+          [{_, labels}] -> labels
+          [] -> []
+        end
+
+      labels = (current ++ list) |> Enum.uniq() |> Enum.sort()
+      :dets.insert(table, {service, labels})
+    end)
+  end
 end

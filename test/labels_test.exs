@@ -2,6 +2,10 @@ defmodule LabelsTest do
   use ExUnit.Case
   doctest Labels
 
+  setup do
+    if File.exists?("labels_dets"), do: File.rm("labels_dets")
+  end
+
   test "init server without labels" do
     assert {:ok, _pid} = Labels.start_link()
 
