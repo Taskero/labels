@@ -47,19 +47,16 @@ end
 # Add to Supervised
 defmodule Application do
   def start(_type, _args) do
-    children = [Labels]
+    children = [{Labels, [default_labels_file: Application.get_env(:labels, :default_labels_file)]}]
     opts = [strategy: :one_for_one, name: Taskero.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end
 
 # Optional if you have a default list of labels
-
 config :labels,
-  defaults_file: "./priv/imports/default_labels.csv")
-# or default one
-config :labels,
-  defaults_file: Path.join(:code.priv_dir(:labels), "imports/default_labels.csv")
+  service: "my_app",
+  default_labels_file: "#{Path.expand("../deps", __DIR__)}/labels/priv/imports/default_labels.csv"
 
 ```
 

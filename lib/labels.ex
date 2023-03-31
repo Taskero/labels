@@ -7,8 +7,6 @@ defmodule Labels do
 
   require Logger
 
-  @default_labels_file "./priv/imports/default_labels.csv"
-
   # Client
 
   @doc """
@@ -40,7 +38,7 @@ defmodule Labels do
   def init(opts) do
     Logger.info("Labels server started with ops #{inspect(opts)}")
 
-    default_file_path = opts |> Keyword.get(:default_labels_file, @default_labels_file)
+    default_file_path = opts |> Keyword.get(:default_labels_file)
 
     {:ok, table} = :dets.open_file(:labels_dets, type: :set)
 
@@ -77,6 +75,8 @@ defmodule Labels do
   end
 
   defp clean(label), do: label |> String.downcase() |> String.trim() |> String.replace(" ", "_")
+
+  defp load_defaults_labels(_, nil), do: :ok
 
   defp load_defaults_labels(table, default_labels_file) do
     default_labels_file
