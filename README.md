@@ -37,18 +37,29 @@ temporary_ets = :ets.new(:temporary_ets, [:public])
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `labels` to your list of dependencies in `mix.exs`:
-
 ```elixir
 def deps do
   [
-    {:labels, "~> 0.1.0"}
+     {:labels, "~> 0.1.0", git: "git@github.com:Taskero/labels.git"},
   ]
 end
+
+# Add to Supervised
+defmodule Application do
+  def start(_type, _args) do
+    children = [{Labels, [default_labels_file: Application.get_env(:labels, :default_labels_file)]}]
+    opts = [strategy: :one_for_one, name: Taskero.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end
+
+# Optional if you have a default list of labels
+config :labels,
+  service: "my_app",
+  default_labels_file: "#{Path.expand("../deps", __DIR__)}/labels/priv/imports/default_labels.csv"
+
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/labels>.
-
